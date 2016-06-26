@@ -1,6 +1,27 @@
 [package]
-name = "m2"
+name = "m2_world"
 version = "0.1.0"
 authors = ["Nick Sanders <cogciprocate@gmail.com>"]
 
 [dependencies]
+rand = "*"
+glium = "*"
+glium_text = "*"
+genmesh = "*"
+obj = { version = "*", features = ["usegenmesh"] }
+# find_folder = "*"
+# colorify = "*"
+tobj = "*"
+# nalgebra = "*"
+cgmath = "*"
+
+[dependencies.bismit]
+path = "/home/nick/projects/bismit"
+# git = "https://github.com/cogciprocate/bismit.git"
+
+# [dependencies.enamel]
+# path = "/home/nick/projects/enamel"
+# git = "https://github.com/cogciprocate/enamel.git"
+
+# [dependencies.time]
+# git = "https://github.com/rust-lang/time.git"
