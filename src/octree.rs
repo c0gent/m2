@@ -21,28 +21,30 @@ pub struct Octree<'a, T: 'a> {
     arena: TypedArena<Octant<'a, T>>,
     // children: [UnsafeCell<Option<&'a Octant<'a, T>>>; 8],
     // root: Octant<'a, T>,
-    root: &'a mut Octant<'a, T>,
+    root: Option<&'a mut Octant<'a, T>>,
 }
 
 impl<'a, T: 'a> Octree<'a, T> {
     pub fn new() -> Octree<'a, T> {
-        let arena: TypedArena<Octant<'a, T>> = TypedArena::with_capacity(1024);
+        // let arena: TypedArena<Octant<'a, T>> = TypedArena::with_capacity(1024);
         // let root = Octant {
         //     payload: None,
         //     parent: None,
         //     children: UnsafeCell::new([None, 8]),
         // };
 
-        let root = arena.alloc(Octant {
+        let mut octree = Octree {
+            arena: TypedArena::with_capacity(1024),
+            root: None,
+        };
+
+        octree.root = Some(octree.arena.alloc(Octant {
             payload: None,
             parent: None,
             children: UnsafeCell::new([None; 8]),
-        });
+        }));
 
-        Octree {
-            arena: arena,
-            root: root,
-        }
+        octree
     }
 }
 
