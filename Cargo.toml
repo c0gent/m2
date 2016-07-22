@@ -14,6 +14,7 @@ obj = { version = "*", features = ["usegenmesh"] }
 tobj = "*"
 # nalgebra = "*"
 cgmath = "*"
+ncollide = "*"
 
 [dependencies.bismit]
 path = "/home/nick/projects/bismit"

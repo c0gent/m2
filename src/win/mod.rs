@@ -14,6 +14,7 @@ use glium::{self, DisplayBuild, Surface};
 use glium::backend::glutin_backend::GlutinFacade;
 use glium::glutin::{self, WindowBuilder, Event};
 use self::entities::Entities;
+use self::models::ModelKind;
 use sim;
 
 pub const TOP_LEFT: [f32; 3] = [-1.0, 1.0, 0.0];
@@ -43,13 +44,13 @@ pub struct Window {
 
 impl<'d> Window {
     pub fn open() {
-        println!("Opening a window into the world...");
+        println!("Opening a window into a new world...");
 
         let display: GlutinFacade = WindowBuilder::new()
             .with_depth_buffer(24)
             .with_dimensions(1400, 800)
-            .with_title("Vibi".to_string())
-            // .with_multisampling(8)
+            .with_title("M2 World".to_string())
+            .with_multisampling(8)
             // Disabled for development ->> .with_gl_robustness(glium::glutin::Robustness::NoError)
             .with_vsync()
             // .with_transparency(true)
@@ -57,9 +58,15 @@ impl<'d> Window {
             .build_glium().unwrap();
 
         let mut sim = sim::Snapshot::new();
-        sim.new_entity(sim::Object::Cube);
-
         let mut entities = Entities::new(&display).init();
+
+        // // DEBUG:
+        // println!("ModelKind::Cube index: {}", entities.models().model_index(&ModelKind::Cube));
+
+        sim.new_entity([-1.5, -1.5, 8.0], 1.0, entities.models().model_index(&ModelKind::Cube));
+        sim.new_entity([1.5, 1.5, 12.0], 1.0, entities.models().model_index(&ModelKind::Cube));
+
+
 
         // Main window data struct:
         let mut window = Window {
