@@ -11,6 +11,7 @@ use std::ops::Range;
 use glium::{self, VertexBuffer, IndexBuffer, Program, DrawParameters, Surface};
 use glium::vertex::EmptyInstanceAttributes;
 use glium::backend::glutin_backend::GlutinFacade;
+use cgmath::{Quaternion, Vector3, Vector4, Matrix3, Matrix4, Rotation3, Rad, InnerSpace};
 use win;
 use win::entity::Entity;
 // use win::vertex::Vertex;
@@ -23,9 +24,33 @@ use sim::{Snapshot, Object};
 
 
 const MAX_ENTITIES: usize = 1024;
+
 static MODEL_FILES: [&'static str; 1] = [
     "/home/nick/models/cube_tri.obj",
 ];
+
+    // struct Spatial { vec4 pos, rot; };
+
+    // //rotate vector
+    // vec3 qrot(vec4 q, vec3 v) { return v + 2.0*cross(q.xyz, cross(q.xyz,v) + q.w*v); }
+
+    // //rotate vector (alternative)
+    // vec3 qrot_2(vec4 q, vec3 v) { return v*(q.w*q.w - dot(q.xyz,q.xyz)) + 2.0*q.xyz*dot(q.xyz,v) + 2.0*q.w*cross(q.xyz,v); }
+
+    // //combine quaternions
+    // vec4 qmul(vec4 a, vec4 b) { return vec4(cross(a.xyz,b.xyz) + a.xyz*b.w + b.xyz*a.w, a.w*b.w - dot(a.xyz,b.xyz)); }
+
+    // //inverse quaternion
+    // vec4 qinv(vec4 q) { return vec4(-q.xyz,q.w); }
+
+    // //perspective project
+    // vec4 get_projection(vec3 v, vec4 pr) { return vec4( v.xy * pr.xy, v.z*pr.z + pr.w, -v.z); }
+
+    // //transform by Spatial forward
+    // vec3 trans_for(vec3 v, Spatial s) { return qrot(s.rot, v*s.pos.w) + s.pos.xyz; }
+
+    // //transform by Spatial inverse
+    // vec3 trans_inv(vec3 v, Spatial s) { return qrot( vec4(-s.rot.xyz, s.rot.w), (v-s.pos.xyz)/s.pos.w ); }
 
 
 // Vertex Shader:
@@ -34,8 +59,12 @@ static VERTEX_SHADER_SRC: &'static str = r#"
     in vec3 position;
     // in vec4 color;
     in vec3 normal; // 5
-    in vec3 translation;
-    in float scale;
+
+    // in vec3 translation;
+    // in vec4 orientation;
+    // in float scale;
+    in mat4 model;
+
     out vec4 v_color;
     out vec3 v_position;
     out vec3 v_normal; // <-- line 10
@@ -45,13 +74,31 @@ static VERTEX_SHADER_SRC: &'static str = r#"
     uniform mat4 persp;
 
     void main() {
-        // Model transformation matrix:
-        mat4 model = mat4(
-            scale, 0.0, 0.0, 0.0,
-            0.0, scale, 0.0, 0.0,
-            0.0, 0.0, scale, 0.0,
-            translation.x, translation.y, translation.z, 1.0
-        );
+        // // Model rotation matrix:
+        // mat4 rotation_matrix = mat4(
+        //     1.0, 0.0, 0.0, 0.0,
+        //     0.0, 1.0, 0.0, 0.0,
+        //     0.0, 0.0, 1.0, 0.0,
+        //     0.0, 0.0, 0.0, 1.0
+        // );
+
+        // // Model scale matrix:
+        // mat4 scale_matrix = mat4(
+        //     scale, 0.0, 0.0, 0.0,
+        //     0.0, scale, 0.0, 0.0,
+        //     0.0, 0.0, scale, 0.0,
+        //     0.0, 0.0, 0.0, 1.0
+        // );
+
+        // // Model translation matrix:
+        // mat4 trans_matrix = mat4(
+        //     1.0, 0.0, 0.0, 0.0,
+        //     0.0, 1.0, 0.0, 0.0,
+        //     0.0, 0.0, 1.0, 0.0,
+        //     translation.x, translation.y, translation.z, 1.0
+        // );
+
+        // mat4 model = trans_matrix * rotation_matrix * scale_matrix;
 
         mat4 model_view = view * model;
 
@@ -99,20 +146,34 @@ static FRAGMENT_SHADER_SRC: &'static str = r#"
     };
 "#;
 
+// #[derive(Copy, Clone, Debug)]
+// pub struct EntityVertex {
+//     pub translation: [f32; 3],
+//     pub orientation: [f32; 4],
+//     pub scale: f32,
+// }
+// implement_vertex!(EntityVertex, translation, orientation, scale);
+
+// impl Default for EntityVertex {
+//     fn default() -> EntityVertex {
+//         EntityVertex {
+//             translation: [0.0, 0.0, 0.0],
+//             orientation: [0.0, 0.0, 0.0, 0.0],
+//             scale: 0.0,
+//         }
+//     }
+// }
+
 #[derive(Copy, Clone, Debug)]
 pub struct EntityVertex {
-    pub translation: [f32; 3],
-    pub orientation: [f32; 4],
-    pub scale: f32,
+    model: [[f32; 4]; 4],
 }
-implement_vertex!(EntityVertex, translation, orientation, scale);
+implement_vertex!(EntityVertex, model);
 
 impl Default for EntityVertex {
     fn default() -> EntityVertex {
         EntityVertex {
-            translation: [0.0, 0.0, 0.0],
-            orientation: [0.0, 0.0, 0.0, 0.0],
-            scale: 0.0,
+            model: [[0.0; 4]; 4],
         }
     }
 }
@@ -294,15 +355,19 @@ impl<'d> Entities<'d> {
     // [TODO]: This system needs to be redesigned. There are too many steps
     // between sim and drawing (see README notes).
     //
-    // Also: Only `Object::Entity` is being drawn.
+    // NOTE: Only `Object::Entity` is being drawn.
+    // NOTE: One day move matrix calculation to GPU (using OpenCL or Vulkan)
+    // NOTE: Need to simplify/reduce model matrix calculation
     pub fn update_entities(&mut self, sim: &Snapshot) {
+        let t = sim.elapsed_ms();
+
         // Clear entity groups:
         for group in self.entity_groups.iter_mut() {
             group.clear();
         }
 
         // Convert `Node` to `EntityVertex` and place into appropriate group bin.
-        for o_node in sim.nodes() {
+        for (i, o_node) in sim.nodes().iter().enumerate() {
             match *o_node {
                 Some(ref node) => {
                     let model_id = match node.payload {
@@ -312,11 +377,53 @@ impl<'d> Entities<'d> {
                         _ => continue,
                     };
 
-                    self.entity_groups[model_id].push(EntityVertex {
-                        translation: node.position,
-                        orientation: node.orientation,
-                        scale: node.size,
-                    });
+                    let scl = node.size;
+                    let x_shift = node.position[0];
+                    let y_shift = node.position[1];
+                    let z_shift = node.position[2];
+
+                    // REAL VERSION:
+                    // let rot_q = Quaternion::from(node.orientation);
+                    // MANUAL VERSION:
+                    let rot_q = Quaternion::from_axis_angle(
+                        Vector3::new(0.0, i as f32 / 2.0, 1.0).normalize(),
+                        Rad::new((t as f32 / 1000.0) + i as f32)
+                    );
+                    let rot_m3 = Matrix3::from(rot_q);
+                    let model_rot = Matrix4::from_cols(
+                        Vector4::new(rot_m3[0][0], rot_m3[0][1], rot_m3[0][2], 0.0),
+                        Vector4::new(rot_m3[1][0], rot_m3[1][1], rot_m3[1][2], 0.0),
+                        Vector4::new(rot_m3[2][0], rot_m3[2][1], rot_m3[2][2], 0.0),
+                        Vector4::new(0.0, 0.0, 0.0, 1.0),
+                    );
+
+                    // Model transformation matrix:
+                    let model_scl = Matrix4::from([
+                        [scl, 0.0, 0.0, 0.0],
+                        [0.0, scl, 0.0, 0.0],
+                        [0.0, 0.0, scl, 0.0],
+                        [0.0, 0.0, 0.0, 1.0f32],
+                    ]);
+
+                    // Model scale matrix:
+                    let model_trans = Matrix4::from([
+                        [1.0, 0.0, 0.0, 0.0],
+                        [0.0, 1.0, 0.0, 0.0],
+                        [0.0, 0.0, 1.0, 0.0],
+                        [x_shift, y_shift, z_shift, 1.0f32],
+                    ]);
+
+                    // // Model transformation and scale matrix:
+                    // let model_ts = [
+                    //     [scl, 0.0, 0.0, 0.0],
+                    //     [0.0, scl, 0.0, 0.0],
+                    //     [0.0, 0.0, scl, 0.0],
+                    //     [x_shift, y_shift, z_shift, 1.0f32],
+                    // ];
+
+                    let model = model_trans * model_rot * model_scl;
+
+                    self.entity_groups[model_id].push(EntityVertex { model: model.into() });
                 },
                 None => (),
             }

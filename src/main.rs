@@ -1,4 +1,4 @@
-#![feature(rustc_private)]
+// #![feature(rustc_private)]
 
 #[macro_use] extern crate glium;
 extern crate glium_text;
@@ -14,7 +14,8 @@ extern crate obj;
 // extern crate nalgebra;
 // extern crate tobj;
 extern crate cgmath;
-extern crate arena;
+// extern crate arena;
+extern crate time;
 
 mod util;
 mod sim;

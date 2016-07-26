@@ -15,6 +15,7 @@ tobj = "*"
 # nalgebra = "*"
 cgmath = "*"
 ncollide = "*"
+time = "*"
 
 [dependencies.bismit]
 path = "/home/nick/projects/bismit"

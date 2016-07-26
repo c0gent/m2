@@ -65,6 +65,9 @@ impl<'d> Window {
 
         sim.new_entity([-1.5, -1.5, 8.0], 1.0, entities.models().model_index(&ModelKind::Cube));
         sim.new_entity([1.5, 1.5, 12.0], 1.0, entities.models().model_index(&ModelKind::Cube));
+        sim.new_entity([-1.5, 1.5, 15.0], 1.0, entities.models().model_index(&ModelKind::Cube));
+        sim.new_entity([-5.5, 2.5, 20.0], 1.0, entities.models().model_index(&ModelKind::Cube));
+        sim.new_entity([2.5, -2.5, 24.0], 1.0, entities.models().model_index(&ModelKind::Cube));
 
 
 
