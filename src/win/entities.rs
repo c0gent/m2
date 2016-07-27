@@ -289,6 +289,8 @@ impl<'d> Entities<'d> {
         // // Update mouse focus:
         // self.update_mouse_focus();
 
+        println!("entity_group_ranges: {:?}", self.entity_group_ranges);
+
         // // Draw entities:
         // surface.draw((self.models.vbo(), EmptyInstanceAttributes { len: 1 }),
         //     &glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList),
@@ -301,7 +303,7 @@ impl<'d> Entities<'d> {
             // let scl = 1.0;
 
             // // Set up model position:
-            // let x_shift = -6.5;
+            // let x_shift = -7.5 + (model_id as f32 * 3.0);
             // let y_shift = -6.5;
             // let z_shift = 14.0;
 
@@ -324,12 +326,21 @@ impl<'d> Entities<'d> {
 
             let ent_buf_slice = self.entity_buf.slice(range.clone()).unwrap();
 
+            println!("Drawing model_id: {}, range: {:?}", model_id, range);
+
+            let per_instance = ent_buf_slice.per_instance().unwrap();
+
             // // DEBUG:
             // println!("Drawing entity group with range: {:?}", range.clone());
 
-            surface.draw((self.models.verts(model_id),
-                    ent_buf_slice.per_instance().unwrap()
+            surface.draw(
+                (
+                    // self.models.verts(model_id),
+                    self.models.verts(2),
+
                     // EmptyInstanceAttributes { len: 1 }
+                    // ent_buf_slice.per_instance().unwrap()
+                    per_instance
                 ),
                 &glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList),
                 &self.program, &uniforms, &self.params).unwrap();
@@ -386,7 +397,7 @@ impl<'d> Entities<'d> {
                     // let rot_q = Quaternion::from(node.orientation);
                     // MANUAL VERSION:
                     let rot_q = Quaternion::from_axis_angle(
-                        Vector3::new(0.0, i as f32 / 2.0, 1.0).normalize(),
+                        Vector3::new((i as f32).sin(), (i as f32).cos() / 2.0, 1.0).normalize(),
                         Rad::new((t as f32 / 1000.0) + i as f32)
                     );
                     let rot_m3 = Matrix3::from(rot_q);
@@ -424,6 +435,9 @@ impl<'d> Entities<'d> {
                     let model = model_trans * model_rot * model_scl;
 
                     self.entity_groups[model_id].push(EntityVertex { model: model.into() });
+
+                    // // DEBUG:
+                    // println!("Entity {}: \n{:?}\n", i, self.entity_groups[model_id].last());
                 },
                 None => (),
             }
@@ -440,7 +454,7 @@ impl<'d> Entities<'d> {
 
         for (group_id, group) in self.entity_groups.iter().enumerate() {
             debug_assert!(self.entity_group_ranges.len() == group_id);
-            self.entity_group_ranges.push(buf_len..group.len());
+            self.entity_group_ranges.push(buf_len..buf_len + group.len());
 
             // // DEBUG:
             // println!("Adding entity group with range: {:?}", buf_len..group.len());
@@ -451,6 +465,7 @@ impl<'d> Entities<'d> {
             }
 
             debug_assert!(buf_len == self.entity_group_ranges.last().unwrap().start + group.len());
+            debug_assert!(buf_len == self.entity_group_ranges.last().unwrap().end);
         }
     }
 }

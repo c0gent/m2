@@ -20,6 +20,8 @@ use win::vertex;
 pub enum ModelKind {
     None,
     Cube,
+    CrazyShape,
+    Cube2,
 }
 
 impl ModelKind {
@@ -27,6 +29,8 @@ impl ModelKind {
         vec![
             (ModelKind::None, None),
             (ModelKind::Cube, Some("/home/nick/models/cube_tri.obj")),
+            (ModelKind::Cube2, Some("/home/nick/models/cube_tri.obj")),
+            (ModelKind::CrazyShape, Some("/home/nick/models/crazy_shape.obj")),
         ]
     }
 
@@ -81,7 +85,10 @@ impl Models {
     pub fn verts(&self, model_id: usize) -> VertexBufferSlice<Vertex> {
         assert!(model_id < self.model_vertex_ranges.len(), "Models::model_verts: 'model_id' \
             out of range.");
-        self.vbo.slice(self.model_vertex_ranges[model_id].clone())
+        let model_vertex_range = self.model_vertex_ranges[model_id].clone();
+        // println!("Slicing model VBO using range: {:?}", model_vertex_range);
+        assert!(model_vertex_range.end <= self.vbo.len());
+        self.vbo.slice(model_vertex_range)
             .expect("Models::model_verts: Internal error: invalid slice range.")
     }
 
