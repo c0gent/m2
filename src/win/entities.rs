@@ -235,7 +235,7 @@ impl<'d> Entities<'d> {
 
         // [NOTE]: `persistent` gives performance improvement:
         // let raw_states_buf = VertexBuffer::dynamic(display, vec_ref).unwrap();
-        let entity_buf = VertexBuffer::empty_persistent(display, MAX_ENTITIES).unwrap();
+        let entity_buf = VertexBuffer::empty_dynamic(display, MAX_ENTITIES).unwrap();
 
 
         Entities {
@@ -336,7 +336,7 @@ impl<'d> Entities<'d> {
             surface.draw(
                 (
                     // self.models.verts(model_id),
-                    self.models.verts(2),
+                    self.models.vbo(model_id),
 
                     // EmptyInstanceAttributes { len: 1 }
                     // ent_buf_slice.per_instance().unwrap()
