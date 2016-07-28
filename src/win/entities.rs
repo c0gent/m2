@@ -289,8 +289,6 @@ impl<'d> Entities<'d> {
         // // Update mouse focus:
         // self.update_mouse_focus();
 
-        println!("entity_group_ranges: {:?}", self.entity_group_ranges);
-
         // // Draw entities:
         // surface.draw((self.models.vbo(), EmptyInstanceAttributes { len: 1 }),
         //     &glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList),
@@ -326,20 +324,14 @@ impl<'d> Entities<'d> {
 
             let ent_buf_slice = self.entity_buf.slice(range.clone()).unwrap();
 
-            println!("Drawing model_id: {}, range: {:?}", model_id, range);
+            // // DEBUG:
+            // println!("Drawing model_id: {}, range: {:?}", model_id, range);
 
             let per_instance = ent_buf_slice.per_instance().unwrap();
 
-            // // DEBUG:
-            // println!("Drawing entity group with range: {:?}", range.clone());
-
             surface.draw(
                 (
-                    // self.models.verts(model_id),
                     self.models.vbo(model_id),
-
-                    // EmptyInstanceAttributes { len: 1 }
-                    // ent_buf_slice.per_instance().unwrap()
                     per_instance
                 ),
                 &glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList),
