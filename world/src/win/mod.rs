@@ -1,4 +1,4 @@
-//! Window into the world.
+//! Window into a world.
 //!
 //!
 
@@ -64,15 +64,13 @@ impl<'d> Window {
         // println!("ModelKind::Cube index: {}", entities.models().model_index(&ModelKind::Cube));
 
         sim.new_entity([-1.5, -1.5, 8.0], 1.0, entities.models().model_index(&ModelKind::Cube));
-        sim.new_entity([1.5, 1.5, 12.0], 1.0, entities.models().model_index(&ModelKind::Cube));
+        sim.new_entity([1.5, 1.5, 8.0], 0.8, entities.models().model_index(&ModelKind::CrazyShape));
         sim.new_entity([-1.5, 1.5, 15.0], 1.0, entities.models().model_index(&ModelKind::Cube));
         sim.new_entity([-5.5, 2.5, 20.0], 1.0, entities.models().model_index(&ModelKind::Cube));
         sim.new_entity([2.5, -2.5, 24.0], 1.0, entities.models().model_index(&ModelKind::Cube));
-        sim.new_entity([7.5, 2.5, 24.0], 1.0, entities.models().model_index(&ModelKind::CrazyShape));
+        sim.new_entity([10.5, 2.5, 24.0], 1.0, entities.models().model_index(&ModelKind::CrazyShape));
         sim.new_entity([-10.5, -10.5, 30.0], 1.0, entities.models().model_index(&ModelKind::Cube2));
         sim.new_entity([10.5, 10.5, 30.0], 1.0, entities.models().model_index(&ModelKind::CrazyShape));
-
-
 
         // Main window data struct:
         let mut window = Window {

@@ -25,9 +25,9 @@ use sim::{Snapshot, Object};
 
 const MAX_ENTITIES: usize = 1024;
 
-static MODEL_FILES: [&'static str; 1] = [
-    "/home/nick/models/cube_tri.obj",
-];
+// static MODEL_FILES: [&'static str; 1] = [
+//     "/home/nick/models/cube_tri.obj",
+// ];
 
     // struct Spatial { vec4 pos, rot; };
 
